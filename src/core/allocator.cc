@@ -33,7 +33,23 @@ namespace infini
         // TODO: 设计一个算法来分配内存，返回起始地址偏移量
         // =================================== 作业 ===================================
 
-        return 0;
+        // 1. 遍历 freeBlocks 找到第一个大于等于 size 的 block
+        size_t offset = used;
+        for (auto it = freeBlocks.begin(); it != freeBlocks.end(); ++it)
+        {
+            if (it->second >= size)
+            {
+                // 2. 如果找到，将 block 从 freeBlocks 中移除，返回 block 的起始地址偏移量
+                offset = it->first;
+                freeBlocks.erase(it);
+                return offset;
+            }
+        }
+
+        // 3. 如果没有找到，将 size 加入到 used 中，更新 peak，返回 used - size
+        used += size;
+        peak = std::max(peak, used);
+        return offset;
     }
 
     void Allocator::free(size_t addr, size_t size)
@@ -44,6 +60,24 @@ namespace infini
         // =================================== 作业 ===================================
         // TODO: 设计一个算法来回收内存
         // =================================== 作业 ===================================
+
+        // 1. 检查 addr 是否在 used 范围内
+        IT_ASSERT(addr >= 0 && addr < used);
+
+        // 2. 检查 addr 是否对齐
+        IT_ASSERT(addr % alignment == 0);
+
+        // 3. 检查 size 是否对齐
+        IT_ASSERT(size % alignment == 0);
+
+        // 4. 检查 addr + size 是否超过 used
+        IT_ASSERT(addr + size <= used);
+
+        // 5. 将 addr 和 size 加入到 freeBlocks 中
+        freeBlocks[addr] = size;
+
+        // 更新 used
+        used -= size;
     }
 
     void *Allocator::getPtr()

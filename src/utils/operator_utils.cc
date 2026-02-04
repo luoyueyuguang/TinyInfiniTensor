@@ -10,7 +10,36 @@ Shape infer_broadcast(const Shape &A, const Shape &B) {
     // REF: https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md
     // =================================== 作业 ===================================
     
-    return {};
+    // 1. 检查 A 和 B 是否有一个为空
+    if (A.empty() && B.empty()) {
+        return {{}};
+    }
+    if (A.empty() || B.empty()) {
+        return A.empty() ? B : A;
+    }
+
+    //get the max rank
+    auto A_ = A;
+    auto B_ = B;
+    auto maxRank = std::max(A.size(), B.size());
+    if (A.size() < maxRank) {
+        for (size_t i = 0; i < maxRank - A.size(); ++i) {
+            A_.insert(A_.begin(), 1);
+        }
+    }
+    if (B.size() < maxRank) {
+        for (size_t i = 0; i < maxRank - B.size(); ++i) {
+            B_.insert(B_.begin(), 1);
+        }
+    }
+
+    // 4. 构造广播后的形状
+    Shape ans(maxRank);
+    for (size_t i = 0; i < maxRank; ++i) {
+        IT_ASSERT(A_[i] == B_[i] || A_[i] == 1 || B_[i] == 1);
+        ans[i] = std::max(A_[i], B_[i]);
+    }
+    return ans;
 }
 
 int get_real_axis(const int &axis, const int &rank) {
